@@ -1,0 +1,33 @@
+#include "hsp3dish.as"
+
+frame_rate = 60
+thickness = 5
+dim written, 4, 65535
+written_idx = 0
+pressed_time_thicker = 0
+pressed_time_thiner = 0
+time = 0
+last_pressed = 65535
+*main
+	time = time + 1
+	redraw 0
+	getkey enter, 13
+	getkey mouse_left, 1
+	if mouse_left = 1 {
+		pressed_time_thicker = pressed_time_thicker + 1
+		if pressed_time_thicker \ 5 = 0 && thickness < 10 : thickness = thickness + 1
+		last_pressed = time
+	} else {
+		pressed_time_thiner = pressed_time_thiner + 1
+		if pressed_time_thiner \ 5 = 0 && thickness > 0 : thickness = thickness - 1
+	}
+	if mouse_left = 1 ||  (0 < time - last_pressed && time - last_pressed < 50) {
+		written_idx = written_idx + 1
+		written(0, written_idx) = mousex - thickness, mousey - thickness, mousex + thickness, mousey + thickness
+	}
+	for i, 0, written_idx
+		circle written(0, i), written(1, i), written(2, i), written(3, i), 1
+	next
+	redraw 1
+	await 1000 / frame_rate
+	goto *main
