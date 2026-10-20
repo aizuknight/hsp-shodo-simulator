@@ -4,6 +4,7 @@ frame_rate = 60
 thickness = 5
 dim written, 4, 65535
 written_idx = 0
+stroke_active = 0
 pressed_time_thicker = 0
 pressed_time_thiner = 0
 time = 0
@@ -22,11 +23,38 @@ last_pressed = 65535
 		if pressed_time_thiner \ 5 = 0 && thickness > 0 : thickness = thickness - 1
 	}
 	if mouse_left = 1 ||  (0 < time - last_pressed && time - last_pressed < 50) {
+		written(0, written_idx) = mousex, mousey, thickness, stroke_active
 		written_idx = written_idx + 1
-		written(0, written_idx) = mousex - thickness, mousey - thickness, mousex + thickness, mousey + thickness
+		stroke_active = 1
+	} else {
+		stroke_active = 0
 	}
 	for i, 0, written_idx
-		circle written(0, i), written(1, i), written(2, i), written(3, i), 1
+		current_x = written(0, i)
+		current_y = written(1, i)
+		current_thickness = written(2, i)
+		if written(3, i) = 0 {
+			previous_x = current_x
+			previous_y = current_y
+			previous_thickness = current_thickness
+		}
+		delta_x = current_x - previous_x
+		delta_y = current_y - previous_y
+		delta_thickness = current_thickness - previous_thickness
+		; Space interpolated circles at most one pixel apart on each axis.
+		steps = abs(delta_x)
+		if abs(delta_y) > steps : steps = abs(delta_y)
+		if steps < 1 : steps = 1
+		repeat steps
+			step_index = cnt + 1
+			draw_x = previous_x + delta_x * step_index / steps
+			draw_y = previous_y + delta_y * step_index / steps
+			draw_thickness = previous_thickness + delta_thickness * step_index / steps
+			circle draw_x - draw_thickness, draw_y - draw_thickness, draw_x + draw_thickness, draw_y + draw_thickness, 1
+		loop
+		previous_x = current_x
+		previous_y = current_y
+		previous_thickness = current_thickness
 	next
 	redraw 1
 	await 1000 / frame_rate
